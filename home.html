@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISM — Security Questionnaire Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c14;
+  --bg2: #0d1520;
+  --bg3: #111d2e;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --white: #f0ede8;
+  --gray: #7a8799;
+  --amber: #e8a435;
+  --amber-dim: rgba(232,164,53,0.12);
+  --amber-glow: rgba(232,164,53,0.25);
+  --teal: #1ec9a0;
+  --teal-dim: rgba(30,201,160,0.1);
+  --red: #e05555;
+  --red-dim: rgba(224,85,85,0.1);
+  --green: #3dba78;
+  --green-dim: rgba(61,186,120,0.1);
+  --blue: #4a9eff;
+  --blue-dim: rgba(74,158,255,0.1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ── GRID LINES ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 80px 80px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container { max-width: 1080px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,12,20,0.85);
+  backdrop-filter: blur(16px);
+}
+
+.nav-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: var(--white);
+}
+
+.nav-logo span { color: var(--amber); }
+
+.nav-links { display: flex; gap: 28px; }
+.nav-links a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray);
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--white); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 100px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,164,53,0.06) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hero-content { max-width: 760px; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(232,164,53,0.3);
+  background: var(--amber-dim);
+  border-radius: 2px;
+  padding: 6px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 28px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(48px, 7vw, 82px);
+  line-height: 1.0;
+  letter-spacing: -2px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+
+.hero h1 .line2 { color: var(--amber); }
+.hero h1 .line3 { color: var(--gray); font-weight: 400; font-size: 0.7em; letter-spacing: -1px; }
+
+.hero-sub {
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--gray);
+  max-width: 560px;
+  margin-bottom: 40px;
+  line-height: 1.65;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 36px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+
+.stat {
+  border-left: 2px solid var(--amber);
+  padding-left: 16px;
+}
+
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1;
+}
+
+.stat-label { font-size: 12px; color: var(--gray); margin-top: 3px; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SECTIONS ── */
+section { padding: 96px 0; border-top: 1px solid var(--border); }
+
+.section-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 16px;
+  color: var(--gray);
+  max-width: 560px;
+  line-height: 1.65;
+  margin-bottom: 56px;
+}
+
+/* ── PROBLEM ── */
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 48px;
+}
+
+.problem-card {
+  background: var(--bg2);
+  padding: 32px 28px;
+  transition: background 0.2s;
+}
+
+.problem-card:hover { background: var(--bg3); }
+
+.problem-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.problem-label {
+  font-size: 13px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.problem-impact {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--red);
+  border-radius: 0 8px 8px 0;
+  padding: 20px 24px;
+  font-size: 15px;
+  color: var(--gray);
+  line-height: 1.65;
+}
+
+.problem-impact strong { color: var(--white); }
+
+/* ── GAP CARDS ── */
+.gap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.gap-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 22px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.gap-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+.gap-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  margin-bottom: 14px;
+}
+
+.gap-icon.red  { background: var(--red-dim);  }
+.gap-icon.amber{ background: var(--amber-dim); }
+.gap-icon.blue { background: var(--blue-dim);  }
+
+.gap-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.gap-desc { font-size: 14px; color: var(--gray); line-height: 1.6; }
+
+/* ── HOW IT WORKS ── */
+.flow-steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  margin-bottom: 48px;
+}
+
+.flow-step {
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
+  position: relative;
+}
+
+.flow-step::after {
+  content: '→';
+  position: absolute;
+  right: -8px;
+  top: 20px;
+  color: var(--amber);
+  font-size: 18px;
+  font-weight: 300;
+}
+
+.flow-step:last-child::after { display: none; }
+
+.flow-num {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--amber-dim);
+  border: 1px solid rgba(232,164,53,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--amber);
+  margin: 0 auto 14px;
+}
+
+.flow-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.flow-desc { font-size: 12px; color: var(--gray); line-height: 1.5; }
+
+/* ── FEATURES ── */
+.features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.feature-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 26px;
+  transition: border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.feature-card.amber::before { background: linear-gradient(90deg, var(--amber), transparent); }
+.feature-card.teal::before  { background: linear-gradient(90deg, var(--teal), transparent);  }
+.feature-card.blue::before  { background: linear-gradient(90deg, var(--blue), transparent);  }
+.feature-card.green::before { background: linear-gradient(90deg, var(--green), transparent); }
+
+.feature-card:hover { border-color: var(--border2); }
+
+.feature-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.feature-tag.amber { color: var(--amber); }
+.feature-tag.teal  { color: var(--teal);  }
+.feature-tag.blue  { color: var(--blue);  }
+.feature-tag.green { color: var(--green); }
+
+.feature-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  line-height: 1.2;
+}
+
+.feature-desc { font-size: 14px; color: var(--gray); line-height: 1.65; }
+
+/* ── KILLER FEATURE ── */
+.killer-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.killer-header {
+  background: rgba(232,164,53,0.06);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.killer-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+}
+
+.killer-header-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.diff-pane {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.diff-panel {
+  padding: 28px;
+  position: relative;
+}
+
+.diff-panel.old {
+  background: rgba(224,85,85,0.05);
+  border-right: 1px solid var(--border);
+}
+
+.diff-panel.new { background: rgba(61,186,120,0.05); }
+
+.diff-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.diff-label.old { color: var(--red); }
+.diff-label.new { color: var(--green); }
+
+.diff-content {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--white);
+}
+
+.diff-highlight-old {
+  background: rgba(224,85,85,0.2);
+  border-bottom: 2px solid var(--red);
+  color: var(--red);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.diff-highlight-new {
+  background: rgba(61,186,120,0.2);
+  border-bottom: 2px solid var(--green);
+  color: var(--green);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.diff-footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 28px;
+  background: rgba(232,164,53,0.04);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diff-warning {
+  font-size: 13px;
+  color: var(--amber);
+  line-height: 1.5;
+}
+
+/* ── DASHBOARD PREVIEW ── */
+.dashboard-preview {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 56px;
+}
+
+.db-bar {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.db-dot { width: 10px; height: 10px; border-radius: 50%; }
+.db-dot.r { background: #ff5f57; }
+.db-dot.y { background: #ffbd2e; }
+.db-dot.g { background: #28c840; }
+.db-url {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--gray);
+  margin-left: 8px;
+}
+
+.db-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+
+.db-col { border-right: 1px solid var(--border); }
+.db-col:last-child { border-right: none; }
+
+.db-col-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.db-col-head.green { color: var(--green); background: var(--green-dim); }
+.db-col-head.amber { color: var(--amber); background: var(--amber-dim); }
+.db-col-head.red   { color: var(--red);   background: var(--red-dim);   }
+
+.db-col-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.db-col-count.green { background: rgba(61,186,120,0.2); color: var(--green); }
+.db-col-count.amber { background: rgba(232,164,53,0.2); color: var(--amber); }
+.db-col-count.red   { background: rgba(224,85,85,0.2);  color: var(--red);   }
+
+.db-items { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.db-item {
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.db-item.green { background: var(--green-dim); border: 1px solid rgba(61,186,120,0.15); }
+.db-item.amber { background: var(--amber-dim); border: 1px solid rgba(232,164,53,0.15); }
+.db-item.red   { background: var(--red-dim);   border: 1px solid rgba(224,85,85,0.15);  }
+
+.db-item-q  { color: var(--gray); margin-bottom: 4px; }
+.db-item-a  { color: var(--white); font-size: 11px; }
+
+.db-badge {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-top: 6px;
+}
+
+.db-badge.green { background: rgba(61,186,120,0.15); color: var(--green); }
+.db-badge.amber { background: rgba(232,164,53,0.15); color: var(--amber); }
+.db-badge.red   { background: rgba(224,85,85,0.15);  color: var(--red);   }
+
+/* ── TECH STACK ── */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.tech-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 16px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.tech-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+.tech-layer {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gray);
+  margin-bottom: 6px;
+}
+
+.tech-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.tech-desc { font-size: 12px; color: var(--gray); }
+
+.free-pill {
+  display: inline-block;
+  background: var(--teal-dim);
+  border: 1px solid rgba(30,201,160,0.2);
+  color: var(--teal);
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+/* ── RESULTS ── */
+.results-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+
+.result-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.result-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--amber);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.result-desc { font-size: 12px; color: var(--gray); line-height: 1.5; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 0;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.footer-logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 3px;
+}
+
+.footer-logo span { color: var(--amber); }
+
+.footer-tagline { font-size: 13px; color: var(--gray); margin-top: 4px; }
+
+.footer-links { display: flex; gap: 16px; }
+
+.footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.footer-btn.primary {
+  background: var(--amber);
+  color: #080c14;
+}
+
+.footer-btn.primary:hover { background: #f0b045; }
+
+.footer-btn.secondary {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--gray);
+}
+
+.footer-btn.secondary:hover { color: var(--white); border-color: var(--white); }
+
+.built-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--gray);
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+/* ── SCROLL ANIMATIONS ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .problem-grid, .gap-grid, .tech-grid, .results-grid { grid-template-columns: 1fr 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+  .flow-steps { flex-direction: column; align-items: center; }
+  .flow-step::after { display: none; }
+  .diff-pane { grid-template-columns: 1fr; }
+  .db-cols { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">PRI<span>SM</span></div>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#solution">Solution</a>
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#stack">Stack</a>
+      <a href="#demo">Demo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-glow"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge">Hackathon Project · Security AI</div>
+      <h1>
+        Auto-answer<br>
+        <span class="line2">security questionnaires.</span><br>
+        <span class="line3">Instantly. Accurately. Honestly.</span>
+      </h1>
+      <p class="hero-sub">
+        PRISM ingests your policies and previous responses, auto-answers SOC 2, ISO 27001, CAIQ, and vendor questionnaires — and unlike every other tool, it catches when an answer is no longer true.
+      </p>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-num">40hrs</div>
+          <div class="stat-label">saved per questionnaire</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">80%+</div>
+          <div class="stat-label">auto-answered</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">0</div>
+          <div class="stat-label">stale answers sent out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">// the problem</div>
+      <h2 class="section-title">Security questionnaires<br>are killing deals.</h2>
+      <p class="section-sub">Every enterprise sale comes with a security questionnaire — hundreds of questions, answered manually, repeated every cycle, from scattered docs.</p>
+    </div>
+
+    <div class="problem-grid reveal">
+      <div class="problem-card">
+        <div class="problem-num">40hrs</div>
+        <div class="problem-label">per questionnaire</div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-num">50+</div>
+        <div class="problem-label">questionnaires per year</div>
+      </div>
+      <div class="problem-card">
+        <div class="problem-num">1–2</div>
+        <div class="problem-label">full-time employees wasted</div>
+      </div>
+    </div>
+
+    <div class="problem-impact reveal">
+      <strong>The real cost:</strong> Slow turnaround delays enterprise deals. Security teams burn time on repetitive copy-paste instead of actual security work. And existing tools still miss the most dangerous failure mode — sending an answer that used to be true but isn't anymore.
+    </div>
+  </div>
+</section>
+
+<!-- EXISTING TOOLS GAP -->
+<section>
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">// why current tools aren't enough</div>
+      <h2 class="section-title">Three blind spots.<br>Every existing tool.</h2>
+      <p class="section-sub">Tools like Steerlab and Arphie automate responses but share the same three fundamental gaps.</p>
+    </div>
+
+    <div class="gap-grid">
+      <div class="gap-card reveal reveal-delay-1">
+        <div class="gap-icon red">⚠</div>
+        <div class="gap-title">Answer staleness</div>
+        <div class="gap-desc">Tools confidently answer "We are SOC 2 Type II certified" using a policy document — even if that certification lapsed six months ago. Nobody checks if the answer is still true.</div>
+      </div>
+      <div class="gap-card reveal reveal-delay-2">
+        <div class="gap-icon amber">◈</div>
+        <div class="gap-title">No cross-framework intelligence</div>
+        <div class="gap-desc">SOC 2, ISO 27001, CAIQ, and vendor DDQs are treated as separate silos. "Encrypt data at rest?" and "Describe encryption controls" are the same question — no tool knows that.</div>
+      </div>
+      <div class="gap-card reveal reveal-delay-3">
+        <div class="gap-icon blue">⊙</div>
+        <div class="gap-title">No buyer personalization</div>
+        <div class="gap-desc">Every tool is built for the seller. Nobody reads the buyer's context and adjusts the answer's depth, specificity, or tone to match what that specific buyer needs to feel comfortable.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">// how it works</div>
+      <h2 class="section-title">From questionnaire<br>to answered in minutes.</h2>
+      <p class="section-sub">Five steps. Three novel engines. One dashboard that tells you exactly what to review.</p>
+    </div>
+
+    <div class="flow-steps reveal">
+      <div class="flow-step">
+        <div class="flow-num">01</div>
+        <div class="flow-title">Upload questionnaire</div>
+        <div class="flow-desc">Excel, CSV, or PDF. Auto-detects SOC 2, ISO 27001, CAIQ, or vendor format.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">02</div>
+        <div class="flow-title">Map to control nodes</div>
+        <div class="flow-desc">Ontology graph maps every question to a universal security control concept.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">03</div>
+        <div class="flow-title">Retrieve from policies</div>
+        <div class="flow-desc">Hybrid RAG search — semantic + keyword — across all uploaded policy docs.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">04</div>
+        <div class="flow-title">Verify against current docs</div>
+        <div class="flow-desc">Staleness verifier checks if the answer still matches today's policy version.</div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">05</div>
+        <div class="flow-title">Dashboard output</div>
+        <div class="flow-desc">Three columns: auto-answered, stale-flagged, human review queue.</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PREVIEW -->
+    <div class="dashboard-preview reveal">
+      <div class="db-bar">
+        <div class="db-dot r"></div>
+        <div class="db-dot y"></div>
+        <div class="db-dot g"></div>
+        <div class="db-url">prism.app / dashboard / soc2-questionnaire-acme-2026</div>
+      </div>
+      <div class="db-cols">
+        <div class="db-col">
+          <div class="db-col-head green">
+            <span class="db-col-count green">18</span>
+            Auto-answered
+          </div>
+          <div class="db-items">
+            <div class="db-item green">
+              <div class="db-item-q">Do you use MFA for all admin access?</div>
+              <div class="db-item-a">Yes — enforced via Okta with hardware key requirement for production systems.</div>
+              <span class="db-badge green">confidence 94%</span>
+            </div>
+            <div class="db-item green">
+              <div class="db-item-q">Is data encrypted at rest?</div>
+              <div class="db-item-a">All data at rest encrypted with AES-256. Key management via AWS KMS.</div>
+              <span class="db-badge green">confidence 91%</span>
+            </div>
+          </div>
+        </div>
+        <div class="db-col">
+          <div class="db-col-head amber">
+            <span class="db-col-count amber">5</span>
+            Stale flagged
+          </div>
+          <div class="db-items">
+            <div class="db-item amber">
+              <div class="db-item-q">How long are security logs retained?</div>
+              <div class="db-item-a">Answer says 6 months — policy now says 12 months. Review before sending.</div>
+              <span class="db-badge amber">policy mismatch</span>
+            </div>
+            <div class="db-item amber">
+              <div class="db-item-q">SOC 2 Type II certification status?</div>
+              <div class="db-item-a">Certification date in answer predates latest audit report. Verify current.</div>
+              <span class="db-badge amber">verify date</span>
+            </div>
+          </div>
+        </div>
+        <div class="db-col">
+          <div class="db-col-head red">
+            <span class="db-col-count red">4</span>
+            Human review
+          </div>
+          <div class="db-items">
+            <div class="db-item red">
+              <div class="db-item-q">Describe your incident response SLA.</div>
+              <div class="db-item-a">No matching documentation found. Security team input required.</div>
+              <span class="db-badge red">no source found</span>
+            </div>
+            <div class="db-item red">
+              <div class="db-item-q">List all sub-processors handling EU data.</div>
+              <div class="db-item-a">Multiple conflicting sources. Legal review recommended.</div>
+              <span class="db-badge red">conflicting sources</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">// three novel engines</div>
+      <h2 class="section-title">What makes PRISM<br>fundamentally different.</h2>
+      <p class="section-sub">Not just a RAG chatbot over your docs. Three layers that no existing tool has built.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card amber reveal reveal-delay-1">
+        <div class="feature-tag amber">Engine 01 · Unique</div>
+        <div class="feature-title">Staleness Verifier</div>
+        <div class="feature-desc">After generating an answer, a second LLM call checks whether that answer still matches the current version of your policy document. If the policy changed, PRISM flags the contradiction with a side-by-side diff — before it reaches the customer. Nobody else has built this.</div>
+      </div>
+      <div class="feature-card teal reveal reveal-delay-2">
+        <div class="feature-tag teal">Engine 02 · Novel</div>
+        <div class="feature-title">Ontology Graph</div>
+        <div class="feature-desc">A control concept graph maps every question — across SOC 2, ISO 27001, CAIQ, and vendor DDQs — to the same underlying security control node. "Encrypt data at rest?" and "Describe your data encryption controls" are the same node. Answers are reused across frameworks automatically.</div>
+      </div>
+      <div class="feature-card blue reveal reveal-delay-1">
+        <div class="feature-tag blue">Engine 03 · Smart</div>
+        <div class="feature-title">Buyer-Aware Synthesis</div>
+        <div class="feature-desc">PRISM reads the questionnaire's framing — NIST lens, GDPR lens, procurement lens — and adjusts the answer's depth and terminology. A technical CAIQ buyer gets precise control-level language. A procurement buyer gets plain English. Same underlying answer, right presentation.</div>
+      </div>
+      <div class="feature-card green reveal reveal-delay-2">
+        <div class="feature-tag green">Engine 04 · Learning</div>
+        <div class="feature-title">Corrections Loop</div>
+        <div class="feature-desc">When a human approves or edits an amber or red answer, the corrected version is stored back to the control node in the ontology graph. The next questionnaire with the same control gets the corrected answer first. PRISM improves with every review cycle.</div>
+      </div>
+    </div>
+
+    <!-- KILLER FEATURE CALLOUT -->
+    <div class="killer-wrap reveal" style="margin-top: 40px;">
+      <div class="killer-header">
+        <div class="killer-dot"></div>
+        <div class="killer-header-title">Staleness verifier — live example</div>
+      </div>
+      <div class="diff-pane">
+        <div class="diff-panel old">
+          <div class="diff-label old">what the answer says</div>
+          <div class="diff-content">
+            "Security logs are retained for
+            <span class="diff-highlight-old">6 months</span>
+            in accordance with our data retention policy, last updated Q2 2024."
+          </div>
+        </div>
+        <div class="diff-panel new">
+          <div class="diff-label new">what the current policy says</div>
+          <div class="diff-content">
+            "All security and access logs shall be retained for a minimum of
+            <span class="diff-highlight-new">12 months</span>
+            as required by updated ISO 27001 controls, effective Jan 2025."
+          </div>
+        </div>
+      </div>
+      <div class="diff-footer">
+        <div class="killer-dot"></div>
+        <div class="diff-warning">
+          <strong>PRISM caught this.</strong> Every existing tool would have sent "6 months" to your customer — a compliance inaccuracy that could cost you the deal or a certification.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="stack">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">// tech stack</div>
+      <h2 class="section-title">Built on proven tools.<br>All free tier.</h2>
+      <p class="section-sub">No proprietary cloud lock-in. Everything runs open-source or free-tier, built on top of DataSutra — an existing dual-RAG system.</p>
+    </div>
+
+    <div class="tech-grid">
+      <div class="tech-card reveal reveal-delay-1">
+        <div class="tech-layer">LLM</div>
+        <div class="tech-name">Groq + Llama 3</div>
+        <div class="tech-desc">Fastest free LLM inference. Critical for 2-call staleness pipeline.</div>
+        <div class="free-pill">Free tier</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-2">
+        <div class="tech-layer">Vector store</div>
+        <div class="tech-name">ChromaDB</div>
+        <div class="tech-desc">Embedded zero-config vector DB. Semantic retrieval over policy chunks.</div>
+        <div class="free-pill">Local free</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-3">
+        <div class="tech-layer">Search</div>
+        <div class="tech-name">Elasticsearch + BM25</div>
+        <div class="tech-desc">Hybrid retrieval — dense semantic + sparse keyword fusion.</div>
+        <div class="free-pill">Free tier</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-1">
+        <div class="tech-layer">Ontology graph</div>
+        <div class="tech-name">NetworkX</div>
+        <div class="tech-desc">In-memory Python graph. Control node mapping across all frameworks.</div>
+        <div class="free-pill">Open source</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-2">
+        <div class="tech-layer">Backend</div>
+        <div class="tech-name">FastAPI</div>
+        <div class="tech-desc">Async Python API. Auto-docs, fast to build, production-grade.</div>
+        <div class="free-pill">Open source</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-3">
+        <div class="tech-layer">Embeddings</div>
+        <div class="tech-name">sentence-transformers</div>
+        <div class="tech-desc">all-MiniLM-L6-v2. Runs locally, no API key needed.</div>
+        <div class="free-pill">Local free</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-1">
+        <div class="tech-layer">Frontend</div>
+        <div class="tech-name">React + Vite</div>
+        <div class="tech-desc">3-column dashboard. Hot reload, Tailwind, fast iteration.</div>
+        <div class="free-pill">Open source</div>
+      </div>
+      <div class="tech-card reveal reveal-delay-2">
+        <div class="tech-layer">Deployment</div>
+        <div class="tech-name">Railway + Vercel</div>
+        <div class="tech-desc">Backend on Railway, frontend on Vercel. Live URLs in minutes.</div>
+        <div class="free-pill">Free tier</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="demo">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-tag">// demo results</div>
+      <h2 class="section-title">What the demo shows.</h2>
+      <p class="section-sub">30-question SOC 2 questionnaire. 3 uploaded policy docs. One intentionally outdated answer to demonstrate the staleness verifier.</p>
+    </div>
+
+    <div class="results-grid">
+      <div class="result-card reveal reveal-delay-1">
+        <div class="result-num">80%+</div>
+        <div class="result-desc">questions auto-answered (green + amber combined)</div>
+      </div>
+      <div class="result-card reveal reveal-delay-2">
+        <div class="result-num">3</div>
+        <div class="result-desc">novel engines no other team has built</div>
+      </div>
+      <div class="result-card reveal reveal-delay-3">
+        <div class="result-num">4</div>
+        <div class="result-desc">formats supported — SOC 2, ISO 27001, CAIQ, vendor DDQ</div>
+      </div>
+      <div class="result-card reveal reveal-delay-1">
+        <div class="result-num">0</div>
+        <div class="result-desc">stale answers sent out undetected</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">PRI<span>SM</span></div>
+        <div class="footer-tagline">Policy-Reality Integrity and Semantic Mapping Agent</div>
+        <div class="built-tag" style="margin-top: 8px;">Built in 24 hours · Hackathon 2026</div>
+      </div>
+      <div class="footer-links">
+        <a class="footer-btn secondary" href="#">GitHub</a>
+        <a class="footer-btn primary" href="#">Live Demo</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
